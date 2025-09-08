@@ -1,6 +1,7 @@
 import GoogleProvider from "next-auth/providers/google";
-import { AuthOptions, ISODateString } from "next-auth";
+import { Account, AuthOptions, ISODateString } from "next-auth";
 import { JWT } from "next-auth/jwt";
+import axios from "axios";
 
 export interface CustomUser {
   id?: string | null;
@@ -34,11 +35,42 @@ export const authOptions: AuthOptions = {
     }),
   ],
   callbacks: {
-    async signIn({ user, account }) {
-      console.log("user data is " + user);
-      console.log("account is " + account);
+    async signIn({
+      user,
+      account,
+    }: {
+      user: CustomUser;
+      account: Account | null;
+    }) {
+      try {
+        const payload = {
+          name: user.name,
+          email: user.email,
+          provider: account?.provider,
+          oauth_id: account?.providerAccountId,
+          image: user.image,
+        };
+        const { data } = await axios.post(
+          `${process.env.NEXTAUTH_URL}/api/login`,
+          payload
+        );
 
-      return true;
+        const extendedUser = user as CustomUser & { customUser?: CustomUser };
+
+        extendedUser.customUser = {
+          id: data?.user?.id?.toString(),
+          name: data?.user?.name,
+          email: data?.user?.email,
+          image: data?.user?.image,
+          token: data?.user?.token,
+          provider: data?.user?.provider,
+        };
+        return `/c/${data?.user?.id?.toString()}`;
+      } catch (error) {
+        console.log(error);
+
+        return false;
+      }
     },
     async jwt({ token, user }) {
       if (user) {
@@ -48,7 +80,6 @@ export const authOptions: AuthOptions = {
     },
     async session({
       session,
-      user,
       token,
     }: {
       session: CustomSession;

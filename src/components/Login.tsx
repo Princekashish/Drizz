@@ -1,5 +1,6 @@
 "use client"
 import axios from 'axios'
+import { signIn } from 'next-auth/react'
 import React, { useState } from 'react'
 
 type user = {
@@ -38,6 +39,10 @@ export default function Login() {
     }
     console.log(profile);
 
+    const handleLogin = () => {
+        signIn("google")
+    }
+
     return (
         <div className="flex justify-center items-center   h-screen relative">
             <div className=" bg-zinc-900 h-1/2 w-1/2 flex-col relative text-start rounded-4xl justify-center items-center  flex  gap-2">
@@ -58,7 +63,7 @@ export default function Login() {
 
             </div>
             <div className='absolute top-5 right-5 '>
-                <button className='px-5 py-2 rounded-3xl bg-white/20 '>Login</button>
+                <button onClick={handleLogin} className='px-5 py-2 rounded-3xl bg-white/20 '>Login</button>
             </div>
         </div>
     )
