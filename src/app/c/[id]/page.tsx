@@ -1,6 +1,9 @@
+import News from "@/components/news";
 import { db } from "@/db/drizzle"; // your db client
 import { users } from "@/db/schema";
+import axios from "axios";
 import { eq } from "drizzle-orm";
+import { getServerSession } from "next-auth";
 
 type Props = {
   params: Promise<{
@@ -10,16 +13,17 @@ type Props = {
 
 export default async function UserProfile(props: Props) {
   const { id } = await props.params;
-  console.log(id);
 
   const user = await db.select().from(users).where(eq(users.id, id)).limit(1);
   if (!user.length) {
     return <div>User not found</div>;
   }
 
+
+
   return (
     <div>
-      <h1>Welcome, {user[0].name}</h1>
+      <News/>
     </div>
   );
 }

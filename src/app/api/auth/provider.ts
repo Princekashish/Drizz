@@ -65,6 +65,7 @@ export const authOptions: AuthOptions = {
           token: data?.user?.token,
           provider: data?.user?.provider,
         };
+
         return `/c/${data?.user?.id?.toString()}`;
       } catch (error) {
         console.log(error);
@@ -88,6 +89,14 @@ export const authOptions: AuthOptions = {
     }) {
       session.user = token.user as CustomUser;
       return session;
+    },
+    
+    async redirect({ url, baseUrl }) {
+      const uuid = url.split("/c/")[1];
+      if (uuid) {
+        return `${baseUrl}/c/${uuid}`;
+      }
+      return baseUrl;
     },
   },
 };
