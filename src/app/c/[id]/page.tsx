@@ -1,4 +1,4 @@
-import News from "@/components/news";
+import News from "@/app/news/page";
 import { db } from "@/db/drizzle"; // your db client
 import { users } from "@/db/schema";
 import axios from "axios";

@@ -39,9 +39,7 @@ export default function Login() {
     }
     console.log(profile);
 
-    const handleLogin = () => {
-        signIn("google")
-    }
+
 
     return (
         <div className="flex justify-center items-center   h-screen relative">
@@ -61,9 +59,6 @@ export default function Login() {
                 </div>
                 <button onClick={handlesubmit} className='absolute bottom-5 right-20 bg-white/30 rounded-2xl px-4 py-2 '>Submit</button>
 
-            </div>
-            <div className='absolute top-5 right-5 '>
-                <button onClick={handleLogin} className='px-5 py-2 rounded-3xl bg-white/20 '>Login</button>
             </div>
         </div>
     )

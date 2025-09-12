@@ -18,11 +18,13 @@ type news = {
     urlToImage?: string,
 }
 
-export default function News() {
+export default function NewsPage() {
     const [news, setNews] = useState<news[]>([]);
     useEffect(() => {
         newsdata()
     }, [])
+
+    
 
     const newsdata = async () => {
         try {
@@ -42,23 +44,26 @@ export default function News() {
 
 
     return (
-        <div className='p-5'>
-            <div className='grid grid-cols-1 md:grid-cols-3 gap-5'>
-                {
-                    news.map((items, id) => {
-                        return (
-                            <div key={id} className=''>
-                                <div className='flex-col gap-2 flex'>
-                                    <img src={items?.urlToImage} alt="" className='rounded-2xl ' />
-                                    <h1>{items.content}</h1>
-                                </div>
+        <>
+           
+            <div className='p-5'>
+                <div className='grid grid-cols-1 md:grid-cols-3 gap-5'>
+                    {
+                        news.map((items, id) => {
+                            return (
+                                <div key={id} className=''>
+                                    <div className='flex-col gap-2 flex'>
+                                        <img src={items?.urlToImage} alt="" className='rounded-2xl ' />
+                                        <h1>{items.content}</h1>
+                                    </div>
 
-                            </div>
-                        )
-                    })
-                }
+                                </div>
+                            )
+                        })
+                    }
+                </div>
             </div>
-        </div>
+        </>
 
     )
 }

@@ -1,5 +1,5 @@
 import GoogleProvider from "next-auth/providers/google";
-import { Account, AuthOptions, ISODateString } from "next-auth";
+import { Account, ISODateString, NextAuthOptions } from "next-auth";
 import { JWT } from "next-auth/jwt";
 import axios from "axios";
 
@@ -17,7 +17,7 @@ export interface CustomSession {
   expires: ISODateString;
 }
 
-export const authOptions: AuthOptions = {
+export const authOptions: NextAuthOptions = {
   pages: {
     signIn: "/",
   },
