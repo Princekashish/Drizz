@@ -35,10 +35,7 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async signIn({
-      user,
-      account,
-    }: {
+    async signIn({user,account,}: {
       user: CustomUser;
       account: Account | null;
     }) {
@@ -73,30 +70,27 @@ export const authOptions: NextAuthOptions = {
         return false;
       }
     },
-    async jwt({ token, user }) {
-      if (user) {
-        token.user = user;
-      }
-      return token;
-    },
-    async session({
-      session,
-      token,
-    }: {
-      session: CustomSession;
-      user: CustomUser;
-      token: JWT;
-    }) {
-      session.user = token.user as CustomUser;
-      return session;
-    },
+    // async jwt({ token, user }) {
+    //   if (user) {
+    //     token.user = user;
+    //   }
+    //   return token;
+    // },
+    // async session({session,token,}: {
+    //   session: CustomSession;
+    //   user: CustomUser;
+    //   token: JWT;
+    // }) {
+    //   session.user = token.user as CustomUser;
+    //   return session;
+    // },
     
-    async redirect({ url, baseUrl }) {
-      const uuid = url.split("/c/")[1];
-      if (uuid) {
-        return `${baseUrl}/c/${uuid}`;
-      }
-      return baseUrl;
-    },
+    // async redirect({ url, baseUrl }) {
+    //   const uuid = url.split("/c/")[1];
+    //   if (uuid) {
+    //     return `${baseUrl}/c/${uuid}`;
+    //   }
+    //   return baseUrl;
+    // },
   },
 };
