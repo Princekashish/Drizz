@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { Toaster } from 'sonner';
 
 import "./globals.css";
 import SessionProvider from "@/provider/sessionProvider";
@@ -31,8 +32,9 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <SessionProvider>
-           
+
           {children}
+          <Toaster />
         </SessionProvider>
       </body>
     </html >

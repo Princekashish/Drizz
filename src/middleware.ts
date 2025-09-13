@@ -1,10 +1,32 @@
-import { withAuth } from "next-auth/middleware";
+import { getToken } from "next-auth/jwt";
+import { NextRequest, NextResponse } from "next/server";
 
-export default withAuth({
-  pages: {
-    signIn: "/login",
-  },
-});
+const secret = process.env.NEXTAUTH_SECRET;
+
+export async function middleware(req: NextRequest) {
+  const { pathname } = new URL(req.url);
+
+  // Get the token (session) if logged in
+  const token = await getToken({ req, secret });
+
+  // If user is logged in and trying to access root ("/"), redirect to /c/[id]
+  if (token && pathname === "/") {
+    // Make sure token.user.id exists
+    console.log(token);
+
+    return NextResponse.redirect(new URL(`/news`, req.url));
+  }
+
+  // If user is NOT logged in and tries to access /news/*, redirect to login
+  if (!token && pathname.startsWith("/news")) {
+    return NextResponse.redirect(new URL("/", req.url));
+  }
+
+  // Otherwise, allow
+  return NextResponse.next();
+}
+
+// Apply middleware on "/" and "/news/*"
 export const config = {
-  matcher: ["/c/:path*"],
+  matcher: ["/", "/news/:path*"],
 };
