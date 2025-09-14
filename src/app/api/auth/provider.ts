@@ -2,6 +2,9 @@ import GoogleProvider from "next-auth/providers/google";
 import { Account, ISODateString, NextAuthOptions } from "next-auth";
 import { JWT } from "next-auth/jwt";
 import axios from "axios";
+import { db } from "@/db/drizzle";
+import { sessions } from "@/db/schema";
+import { v4 as uuidv4 } from "uuid";
 
 export interface CustomUser {
   id?: string | null;
@@ -26,13 +29,13 @@ export const authOptions: NextAuthOptions = {
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-      authorization: {
-        params: {
-          prompt: "consent",
-          access_type: "offline",
-          response_type: "code",
-        },
-      },
+      // authorization: {
+      //   params: {
+      //     prompt: "consent",
+      //     access_type: "offline",
+      //     response_type: "code",
+      //   },
+      // },
     }),
   ],
   callbacks: {
@@ -67,6 +70,7 @@ export const authOptions: NextAuthOptions = {
           provider: data?.user?.provider,
         };
 
+
         return true;
       } catch (error) {
         console.log(error);
@@ -74,10 +78,35 @@ export const authOptions: NextAuthOptions = {
         return false;
       }
     },
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, }) {
       if (user) {
-        token.user = (user as CustomUser & { customUser?: CustomUser }) || user;
+        const extendeuser = user as CustomUser & { customUser?: CustomUser };
+        const custom = extendeuser.customUser;
+
+        token.user = custom;
+
+        console.log(custom?.id);
+
+        try {
+          if (custom?.id && trigger === "signIn") {
+            // Get IP and user agent from token (set by NextAuth from request headers)
+            const ip = (token.ip as string) || "unknown";
+            const userAgent = (token.ua as string) || "unknown";
+            
+            const sessionData = {
+              user_id: custom.id,
+              token: (token.jti as string) ?? uuidv4(),
+              ip_address: ip,
+              user_agent: userAgent,
+              expired_at: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
+            };
+            await db.insert(sessions).values(sessionData);
+          }
+        } catch (error) {
+          console.error("Error inserting session:", error);
+        }
       }
+
       return token;
     },
     async session({

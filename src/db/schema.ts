@@ -7,8 +7,8 @@ export const users = pgTable("users", {
   image: varchar("image"),
   provider: varchar("provider").notNull(),
   oauth_id: text("oauthid").notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
 });
 
 export const sessions = pgTable("sessions", {
@@ -17,16 +17,14 @@ export const sessions = pgTable("sessions", {
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
   token: text("token").notNull().unique(),
-  ip_addres: text("ip_address"),
+  ip_address: text("ip_address"),
   user_agent: text("user_agent"),
-  createdAt: timestamp("created_at").defaultNow(),
-  expiredAt: timestamp("created_at"),
+  created_at: timestamp("created_at").defaultNow(),
+  expired_at: timestamp("expired_at"),
 });
 
 export const roles = pgTable("roles", {
-  id: uuid("id").notNull().defaultRandom(),
+  id: uuid("id").primaryKey().defaultRandom(),
   name: text("name"),
-  createdAt:timestamp("createdAt").defaultNow(),
+  created_at: timestamp("createdAt").defaultNow(),
 });
-
-

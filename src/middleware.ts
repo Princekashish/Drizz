@@ -6,6 +6,14 @@ const secret = process.env.NEXTAUTH_SECRET;
 export async function middleware(req: NextRequest) {
   const { pathname } = new URL(req.url);
 
+  const ip = req.headers.get("x-forwarded-for");
+  const ua = req.headers.get("user-agent");
+
+  // Store in custom headers for NextAuth to access
+  const res = NextResponse.next();
+  res.headers.set("x-client-ip", ip || "");
+  res.headers.set("x-client-ua", ua || "");
+
   // Get the token (session) if logged in
   const token = await getToken({ req, secret });
 
@@ -28,5 +36,5 @@ export async function middleware(req: NextRequest) {
 
 // Apply middleware on "/" and "/news/*"
 export const config = {
-  matcher: ["/", "/news/:path*"],
+  matcher: ["/news/:path*"],
 };
