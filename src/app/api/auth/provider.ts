@@ -10,7 +10,6 @@ export interface CustomUser {
   id?: string | null;
   name?: string | null;
   email?: string | null;
-  token?: string | null;
   image?: string | null;
   provider?: string | null;
 }
@@ -38,6 +37,11 @@ export const authOptions: NextAuthOptions = {
       // },
     }),
   ],
+  session: {
+    maxAge: 60, 
+    updateAge: 0, 
+    
+  },
   callbacks: {
     async signIn({
       user,
@@ -66,11 +70,8 @@ export const authOptions: NextAuthOptions = {
           name: data?.user?.name,
           email: data?.user?.email,
           image: data?.user?.image,
-          token: data?.user?.token,
           provider: data?.user?.provider,
         };
-
-
         return true;
       } catch (error) {
         console.log(error);
@@ -78,26 +79,25 @@ export const authOptions: NextAuthOptions = {
         return false;
       }
     },
-    async jwt({ token, user, trigger, }) {
+
+    async jwt({ token, user, trigger }) {
       if (user) {
         const extendeuser = user as CustomUser & { customUser?: CustomUser };
         const custom = extendeuser.customUser;
-
         token.user = custom;
-
-        console.log(custom?.id);
+        const customUser = token.user as CustomUser;
 
         try {
-          if (custom?.id && trigger === "signIn") {
-            // Get IP and user agent from token (set by NextAuth from request headers)
+          if (customUser?.id && trigger === "signIn") {
             const ip = (token.ip as string) || "unknown";
             const userAgent = (token.ua as string) || "unknown";
-            
+
             const sessionData = {
-              user_id: custom.id,
+              user_id: customUser?.id,
               token: (token.jti as string) ?? uuidv4(),
               ip_address: ip,
               user_agent: userAgent,
+              // expired_at: new Date(Date.now() + 1000 * 60 * 1)
               expired_at: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
             };
             await db.insert(sessions).values(sessionData);
@@ -106,7 +106,8 @@ export const authOptions: NextAuthOptions = {
           console.error("Error inserting session:", error);
         }
       }
-
+      // console.log(token);
+      
       return token;
     },
     async session({
@@ -118,6 +119,8 @@ export const authOptions: NextAuthOptions = {
       token: JWT;
     }) {
       session.user = token.user as CustomUser;
+      // console.log(session.user);
+      
       return session;
     },
 
