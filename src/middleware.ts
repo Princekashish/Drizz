@@ -1,40 +1,41 @@
+// middleware.ts
 import { getToken } from "next-auth/jwt";
 import { NextRequest, NextResponse } from "next/server";
 
 const secret = process.env.NEXTAUTH_SECRET;
 
 export async function middleware(req: NextRequest) {
-  const { pathname } = new URL(req.url);
+  const { pathname } = req.nextUrl;
 
-  const ip = req.headers.get("x-forwarded-for");
-  const ua = req.headers.get("user-agent");
+  const ip =
+    req.headers.get("x-forwarded-for")?.split(",")[0] ||
+    req.headers.get("x-real-ip") ||
+    "unknown";
 
-  // Store in custom headers for NextAuth to access
+  const ua = req.headers.get("user-agent") || "unknown";
+
   const res = NextResponse.next();
-  res.headers.set("x-client-ip", ip || "");
-  res.headers.set("x-client-ua", ua || "");
 
-  // Get the token (session) if logged in
+  // Set cookies so they can be read inside JWT callback
+  res.cookies.set("x-client-ip", ip);
+  res.cookies.set("x-client-ua", ua);
+
+  // Auth check
   const token = await getToken({ req, secret });
 
-  // If user is logged in and trying to access root ("/"), redirect to /c/[id]
-  if (token && pathname === "/") {
-    // Make sure token.user.id exists
-    console.log(token);
-
-    return NextResponse.redirect(new URL(`/news`, req.url));
+  // Redirect logged-in user from "/" to "/news"
+  if (pathname === "/" && token) {
+    return NextResponse.redirect(new URL("/news", req.url));
   }
 
-  // If user is NOT logged in and tries to access /news/*, redirect to login
+  // If not logged in and trying to access protected route
   if (!token && pathname.startsWith("/news")) {
-    return NextResponse.redirect(new URL("/", req.url));
+    return NextResponse.redirect(new URL("/login", req.url));
   }
 
-  // Otherwise, allow
-  return NextResponse.next();
+  return res;
 }
 
-// Apply middleware on "/" and "/news/*"
 export const config = {
-  matcher: ["/news/:path*"],
+  matcher: ["/", "/news/:path*"],
 };
