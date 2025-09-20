@@ -1,9 +1,14 @@
+import { db } from "@/db/drizzle";
+import { sessions } from "@/db/schema";
+import { eq } from "drizzle-orm";
 import axios from "axios";
 import { Account, NextAuthOptions } from "next-auth";
 import { JWT } from "next-auth/jwt";
 import GoogleProvider from "next-auth/providers/google";
+import { cookies } from "next/headers";
+import { v4 as uuidv4 } from "uuid";
 
-interface CustomeUser {
+interface CustomUser {
   id?: string;
   name?: string | null;
   image?: string | null;
@@ -11,10 +16,15 @@ interface CustomeUser {
   provider?: string;
   oauth_id?: string;
 }
-interface CustomSession {
-  user: CustomeUser;
-  expired_at: string;
-}
+
+type TokenWithUser = JWT & { user?: CustomUser; jti?: string };
+
+const getClientInfoFromCookies = async () => {
+  const cookieStore = await cookies();
+  const ip = cookieStore.get("x-client-ip")?.value || "unknown";
+  const ua = cookieStore.get("x-client-ua")?.value || "unknown";
+  return { ip, ua };
+};
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -29,7 +39,7 @@ export const authOptions: NextAuthOptions = {
       user,
       account,
     }: {
-      user: CustomeUser;
+      user: CustomUser;
       account: Account | null;
     }) {
       try {
@@ -47,8 +57,8 @@ export const authOptions: NextAuthOptions = {
         );
 
         // Object.assign(user, data);
-        const extenduser = user as CustomeUser & { CustomeUser?: CustomeUser };
-        extenduser.CustomeUser = {
+        const extenduser = user as CustomUser & { customUser?: CustomUser };
+        extenduser.customUser = {
           id: data.user.id.toString(),
           email: data.user.email,
           provider: data.user.provider,
@@ -60,27 +70,64 @@ export const authOptions: NextAuthOptions = {
         console.log(error);
       }
 
-      // console.log(user);
-
       return true;
     },
-    async jwt({
-      token,
-      user,
-    }: {
-      token: JWT;
-      user?: CustomeUser & { customUser?: CustomeUser };
-    }) {
-      if (user?.customUser) {
-        token.customUser = user.customUser;
 
+    async jwt({ token, user, trigger }) {
+      const tokenWithUser = token as TokenWithUser;
+
+      if (user && trigger === "signIn") {
+        const extendedUser = user as CustomUser & { customUser?: CustomUser };
+        const customUser = extendedUser.customUser;
+
+        if (!customUser?.id) {
+          throw new Error("Missing user ID");
+        }
+
+        tokenWithUser.user = customUser;
+        const generatedJti = uuidv4();
+        tokenWithUser.jti = generatedJti;
+
+        try {
+          const { ip, ua } = await getClientInfoFromCookies();
+
+          await db.insert(sessions).values({
+            user_id: customUser.id, // ✅ Now TypeScript is happy
+            token: generatedJti,
+            ip_address: ip,
+            user_agent: ua,
+            expired_at: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
+          });
+
+          console.log("New session inserted:", generatedJti);
+        } catch (err) {
+          console.error("Failed to insert session:", err);
+        }
       }
 
-      // console.log(user);
+      if (!tokenWithUser.jti) {
+        tokenWithUser.jti = uuidv4(); // fallback, but shouldn't happen
+      }
 
-      console.log(token);
+      return tokenWithUser;
+    },
+    async session({ token, session }) {
+      const customToken = token as TokenWithUser;
+      if (customToken.user) {
+        session.user = {
+          ...session.user,
+          ...customToken.user,
+        };
+      }
 
-      return token;
+      return session;
+    },
+
+    async redirect({ baseUrl, url }) {
+      if (url.startsWith(baseUrl)) {
+        return baseUrl + "/news";
+      }
+      return url;
     },
   },
 };
